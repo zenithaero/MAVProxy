@@ -49,6 +49,8 @@ class LinkModule(mp_module.MPModule):
         self.add_completion_function('(LINKS)', self.complete_links)
         self.add_completion_function('(LINK)', self.complete_links)
         self.last_altitude_announce = 0.0
+        self.imu0_ready = False
+        self.imu1_ready = False
 
         self.menu_added_console = False
         if mp_util.has_wxpython:
@@ -458,6 +460,17 @@ class LinkModule(mp_module.MPModule):
                 self.mpstate.console.writeln("APM: %s" % mp_util.null_term(m.text), bg=bg, fg=fg)
                 self.status.last_apm_msg = m.text
                 self.status.last_apm_msg_time = time.time()
+
+                # Commands callback
+                self.imu0_ready |= "IMU0 tilt" in m.text
+                self.imu1_ready |= "IMU1 tilt" in m.text
+                if self.imu0_ready and self.imu1_ready:
+                    # Reset imu_ready state and signal mavproxy
+                    self.imu0_ready = False
+                    self.imu1_ready = False
+                    self.mpstate.imu_ready()
+                if "Flight plan received" in m.text:
+                    self.mpstate.fp_ready()
 
         elif mtype == "VFR_HUD":
             have_gps_lock = False

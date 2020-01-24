@@ -257,6 +257,12 @@ class MPState(object):
         self.start_time_s = time.time()
         self.attitude_time_s = 0
 
+        # Main thread function queue
+        self.function_queue = Queue.Queue()
+        # System commands
+        self.cmd_imu_ready = []
+        self.cmd_fp_ready = []
+
     @property
     def mav_param(self):
         '''map mav_param onto the current target system parameters'''
@@ -313,6 +319,20 @@ class MPState(object):
         self.click_location = (lat, lng)
         self.click_time = time.time()
         self.notify_click()
+
+    def imu_ready(self):
+        print("Imu ready")
+        for cstr in self.cmd_imu_ready:
+            cmds = cstr.split(";")
+            for c in cmds:
+                process_stdin(c)
+
+    def fp_ready(self):
+        print("Fp ready")
+        for cstr in self.cmd_fp_ready:
+            cmds = cstr.split(";")
+            for c in cmds:
+                process_stdin(c)
 
 def get_mav_param(param, default=None):
     '''return a EEPROM parameter value'''
@@ -1024,6 +1044,14 @@ def main_loop():
                     # on an exception, remove it from the select list
                     mpstate.select_extra.pop(fd)
 
+def callback_loop():
+    # Process queue events
+    while True:
+        try:
+            callback = mpstate.function_queue.get(False)  # doesn't block
+        except Queue.Empty:  # raised when queue is empty
+            break
+        callback()
 
 
 def input_loop():
@@ -1130,8 +1158,11 @@ if __name__ == '__main__':
                       action='store_true', default=False)
     parser.add_option("--aircraft", dest="aircraft", help="aircraft name", default=None)
     parser.add_option("--cmd", dest="cmd", help="initial commands", default=None, action='append')
+    parser.add_option("--cmd-imu-ready", dest="cmd_imu_ready", help="commands to execute when the IMU is ready", default=None, action="append")
+    parser.add_option("--cmd-fp-ready", dest="cmd_fp_ready", help="commands to execute when the FP is ready", default=None, action="append")
     parser.add_option("--console", action='store_true', help="use GUI console")
     parser.add_option("--map", action='store_true', help="load map module")
+    parser.add_option("--joystick", action="store_true", help="load joystick module")
     parser.add_option(
         '--load-module',
         action='append',
@@ -1305,6 +1336,9 @@ if __name__ == '__main__':
     if opts.map:
         process_stdin('module load map')
 
+    if opts.joystick:
+        process_stdin("module load joystick")
+
     start_scripts = []
     if 'HOME' in os.environ and not opts.setup:
         start_script = os.path.join(os.environ['HOME'], ".mavinit.scr")
@@ -1334,6 +1368,12 @@ if __name__ == '__main__':
             for c in cmds:
                 process_stdin(c)
 
+    if opts.cmd_imu_ready is not None:
+        mpstate.cmd_imu_ready = opts.cmd_imu_ready
+    
+    if opts.cmd_fp_ready is not None:
+        mpstate.cmd_fp_ready = opts.cmd_fp_ready
+
     if opts.profile:
         import yappi    # We do the import here so that we won't barf if run normally and yappi not available
         yappi.start()
@@ -1346,21 +1386,29 @@ if __name__ == '__main__':
     mpstate.status.thread.daemon = True
     mpstate.status.thread.start()
 
+    # Run input loop as a thread
+    if not opts.daemon and not opts.non_interactive:
+        input_thread = threading.Thread(target=input_loop)
+        input_thread.daemon = True
+        input_thread.start()
+
     # use main program for input. This ensures the terminal cleans
     # up on exit
     while (mpstate.status.exit != True):
         try:
-            if opts.daemon or opts.non_interactive:
-                time.sleep(0.1)
-            else:
-                input_loop()
+            callback_loop()
+            time.sleep(0.1)
+            # if opts.daemon or opts.non_interactive:
+            #     time.sleep(0.1)
+            # else:
+            #     input_loop()
         except KeyboardInterrupt:
             if mpstate.settings.requireexit:
                 print("Interrupt caught.  Use 'exit' to quit MAVProxy.")
 
                 #Just lost the map and console, get them back:
                 for (m,pm) in mpstate.modules:
-                    if m.name in ["map", "console"]:
+                    if m.name in ["map", "console". "joystick"]:
                         if hasattr(m, 'unload'):
                             try:
                                 m.unload()

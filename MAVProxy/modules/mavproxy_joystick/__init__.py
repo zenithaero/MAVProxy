@@ -137,10 +137,7 @@ class Joystick(mp_module.MPModule):
             print('Description: {description}'.format(
                 **self.joystick.controls))
 
-    def idle_task(self):
-        if self.joystick is None:
-            return
-
+    def get_events(self):
         for e in pygame.event.get():
             override = self.module('rc').override[:]
             values = self.joystick.read()
@@ -152,6 +149,10 @@ class Joystick(mp_module.MPModule):
                 self.module('rc').override = override
                 self.module('rc').override_period.force()
 
+    def idle_task(self):
+        if self.joystick is None:
+            return
+        self.mpstate.function_queue.put(self.get_events)
 
 def init(mpstate):
     '''initialise module'''
