@@ -27,6 +27,9 @@ except ImportError:
 
 from builtins import input
 
+dirname = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dirname, '..'))
+
 from MAVProxy.modules.lib import textconsole
 from MAVProxy.modules.lib import rline
 from MAVProxy.modules.lib import mp_module
@@ -1408,7 +1411,7 @@ if __name__ == '__main__':
 
                 #Just lost the map and console, get them back:
                 for (m,pm) in mpstate.modules:
-                    if m.name in ["map", "console". "joystick"]:
+                    if m.name in ["map", "console", "joystick"]:
                         if hasattr(m, 'unload'):
                             try:
                                 m.unload()
