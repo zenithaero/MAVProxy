@@ -1,0 +1,34 @@
+description: >
+ PPM transmitter as a joystick via USB cable
+
+match:
+  - 'PPM*'
+
+controls:
+  - channel: 1
+    type: axis
+    id: 1
+    inlow: -0.49
+    inhigh: 0.098
+    invert: true
+
+  - channel: 2
+    type: axis
+    id: 2
+    inlow: -0.49
+    inhigh: 0.098
+    invert: true
+
+  - channel: 3
+    type: axis
+    id: 0
+    inlow: -0.49
+    inhigh: 0.098
+
+  - channel: 4
+    type: axis
+    id: 4
+    inlow: -0.49
+    inhigh: 0.098
+    invert: true
+ 

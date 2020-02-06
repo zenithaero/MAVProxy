@@ -1,15 +1,15 @@
 '''Joystick control classes'''
 
 
-def scale(val,
+def scale(val, invert=False,
           inlow=-1, inhigh=1,
           outlow=1000, outhigh=2000):
     '''Scale an in value in the range (inlow, inhigh) to the
     range (outlow, outhigh).'''
-    return (
-        ((float(val) - inlow) / (inhigh - inlow)) *
-        (outhigh - outlow) + outlow
-    )
+    val = ((float(val) - inlow) / (inhigh - inlow))
+    if invert:
+        val = 1 - val
+    return val * (outhigh - outlow) + outlow
 
 
 class Control (object):
@@ -76,10 +76,15 @@ class Axis (Control):
     @property
     def value(self):
         val = self.joystick.get_axis(self.id)
-        if self.invert:
-            val = -val
-
-        return scale(val, outlow=self.outlow, outhigh=self.outhigh)
+        # print("id {}: {}".format(self.id, val))
+        args = {
+            "invert": self.invert,
+            "inlow": self.inlow,
+            "inhigh": self.inhigh,
+            "outlow": self.outlow,
+            "outhigh": self.outhigh
+        }
+        return scale(val, **args)
 
 
 class Hat (Control):
