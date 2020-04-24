@@ -492,6 +492,7 @@ class WPModule(mp_module.MPModule):
             print("Invalid wp number %u" % idx)
             return
         latlon = self.mpstate.click_location
+        # latlon = self.mpstate.click_location
         if latlon is None:
             print("No map click position available")
             return

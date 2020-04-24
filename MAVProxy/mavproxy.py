@@ -324,14 +324,14 @@ class MPState(object):
         self.notify_click()
 
     def imu_ready(self):
-        print("Imu ready")
+        print("IMU READY => running {}".format(self.cmd_imu_ready))
         for cstr in self.cmd_imu_ready:
             cmds = cstr.split(";")
             for c in cmds:
                 process_stdin(c)
 
     def fp_ready(self):
-        print("Fp ready")
+        print("FP READY => running {}".format(self.cmd_fp_ready))
         for cstr in self.cmd_fp_ready:
             cmds = cstr.split(";")
             for c in cmds:
@@ -1372,9 +1372,11 @@ if __name__ == '__main__':
                 process_stdin(c)
 
     if opts.cmd_imu_ready is not None:
+        print("GOT IMU READY CMD")
         mpstate.cmd_imu_ready = opts.cmd_imu_ready
     
     if opts.cmd_fp_ready is not None:
+        print("GOT FP READY CMD")
         mpstate.cmd_fp_ready = opts.cmd_fp_ready
 
     if opts.profile:
