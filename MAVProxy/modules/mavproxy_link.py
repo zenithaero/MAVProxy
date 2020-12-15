@@ -462,8 +462,8 @@ class LinkModule(mp_module.MPModule):
                 self.status.last_apm_msg_time = time.time()
 
                 # Commands callback
-                self.imu0_ready |= "IMU0 tilt" in m.text
-                self.imu1_ready |= "IMU1 tilt" in m.text
+                self.imu0_ready |= "IMU0 is using GPS" in m.text
+                self.imu1_ready |= "IMU1 is using GPS" in m.text
                 if self.imu0_ready and self.imu1_ready:
                     # Reset imu_ready state and signal mavproxy
                     self.imu0_ready = False
